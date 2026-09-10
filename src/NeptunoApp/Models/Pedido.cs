@@ -1,21 +1,20 @@
-using System;
+using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace NeptunoApp.Models
+namespace NeptunoApp.Models;
+
+public partial class Pedido : ObservableObject
 {
-    public class Pedido
-    {
-        public int IdPedido { get; set; }
-        public int? IdCliente { get; set; }
-        public int? IdEmpleado { get; set; }
-        public string NombreCliente { get; set; }
-        public string NombreEmpleado { get; set; }
-        public DateTime? FechaPedido { get; set; }
-        public DateTime? FechaEntrega { get; set; }
-        public DateTime? FechaEnvio { get; set; }
-        public decimal Flete { get; set; }
-        public string Destinatario { get; set; }
-        public string CiudadDestino { get; set; }
-        public string PaisDestino { get; set; }
-        public decimal TotalPedido { get; set; }
-    }
+    [ObservableProperty] private int pedidoID;
+    [ObservableProperty] private int? clienteID;
+    [ObservableProperty] private int? empleadoID;
+    [ObservableProperty] private int? transportistaID;
+    [ObservableProperty] private string? cliente;
+    [ObservableProperty] private string? empleado;
+    [ObservableProperty] private DateTime? fechaPedido;
+    [ObservableProperty] private DateTime? fechaRequerida;
+    [ObservableProperty] private DateTime? fechaEnvio;
+    [ObservableProperty] private string? destinatario;
+    [ObservableProperty] private string? ciudadDestino;
+    [ObservableProperty] private string? paisDestino;
+    [ObservableProperty] private decimal totalPedido;
 }

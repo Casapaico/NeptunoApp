@@ -1,81 +1,92 @@
-using System.Collections.Generic;
 using System.Data;
 using Microsoft.Data.SqlClient;
 using NeptunoApp.Models;
 
-namespace NeptunoApp.Data
+namespace NeptunoApp.Data;
+
+public class CategoriaRepository : ICategoriaRepository
 {
-    /// <summary>
-    /// Acceso a datos de Categorias mediante PROCEDIMIENTOS ALMACENADOS.
-    /// Modo DESCONECTADO para el listado (SqlDataAdapter + DataTable) y
-    /// modo CONECTADO para las operaciones puntuales (SqlCommand).
-    /// </summary>
-    public class CategoriaRepository
+    private readonly string _connectionString;
+
+    public CategoriaRepository(string connectionString) => _connectionString = connectionString;
+
+    public async Task<int> CrearAsync(Categoria c)
     {
-        public List<Categoria> Listar()
+        await using var cn = new SqlConnection(_connectionString);
+        await using var cmd = new SqlCommand("dbo.usp_Categoria_Crear", cn)
         {
-            var lista = new List<Categoria>();
-            var tabla = new DataTable();
+            CommandType = CommandType.StoredProcedure
+        };
+        cmd.Parameters.Add("@NombreCategoria", SqlDbType.NVarChar, 30).Value = c.NombreCategoria;
+        cmd.Parameters.Add("@Descripcion", SqlDbType.NVarChar, 200).Value = (object?)c.Descripcion ?? DBNull.Value;
 
-            // MODO DESCONECTADO: el adapter abre/cierra la conexion internamente.
-            using (var cn = new SqlConnection(ConexionBD.CadenaConexion))
-            using (var cmd = new SqlCommand("dbo.usp_Categorias_Listar", cn) { CommandType = CommandType.StoredProcedure })
-            using (var adapter = new SqlDataAdapter(cmd))
-            {
-                adapter.Fill(tabla);
-            }
-
-            foreach (DataRow r in tabla.Rows)
-            {
-                lista.Add(new Categoria
-                {
-                    IdCategoria = (int)r["IdCategoria"],
-                    NombreCategoria = r["NombreCategoria"].ToString(),
-                    Descripcion = r["Descripcion"] == System.DBNull.Value ? null : r["Descripcion"].ToString()
-                });
-            }
-            return lista;
-        }
-
-        public int Insertar(Categoria c)
-        {
-            using (var cn = new SqlConnection(ConexionBD.CadenaConexion))
-            using (var cmd = new SqlCommand("dbo.usp_Categorias_Insertar", cn) { CommandType = CommandType.StoredProcedure })
-            {
-                cmd.Parameters.AddWithValue("@NombreCategoria", c.NombreCategoria);
-                cmd.Parameters.AddWithValue("@Descripcion", (object)c.Descripcion ?? System.DBNull.Value);
-                var pId = new SqlParameter("@IdCategoria", SqlDbType.Int) { Direction = ParameterDirection.Output };
-                cmd.Parameters.Add(pId);
-
-                cn.Open();
-                cmd.ExecuteNonQuery();
-                return (int)pId.Value;
-            }
-        }
-
-        public void Actualizar(Categoria c)
-        {
-            using (var cn = new SqlConnection(ConexionBD.CadenaConexion))
-            using (var cmd = new SqlCommand("dbo.usp_Categorias_Actualizar", cn) { CommandType = CommandType.StoredProcedure })
-            {
-                cmd.Parameters.AddWithValue("@IdCategoria", c.IdCategoria);
-                cmd.Parameters.AddWithValue("@NombreCategoria", c.NombreCategoria);
-                cmd.Parameters.AddWithValue("@Descripcion", (object)c.Descripcion ?? System.DBNull.Value);
-
-                cn.Open();
-                cmd.ExecuteNonQuery();
-            }
-        }
-
-        public void Eliminar(int idCategoria)
-        {
-            using (var cn = new SqlConnection(ConexionBD.CadenaConexion))
-            using (var cmd = new SqlCommand("dbo.usp_Categorias_Eliminar", cn) { CommandType = CommandType.StoredProcedure })
-            {
-                cmd.Parameters.AddWithValue("@IdCategoria", idCategoria);
-                cn.Open();
-                cmd.ExecuteNonQuery();
-            }
-        }
+        await cn.OpenAsync();
+        var result = await cmd.ExecuteScalarAsync();
+        return Convert.ToInt32(result);
     }
+
+    public async Task<Categoria?> ObtenerPorIdAsync(int categoriaId)
+    {
+        await using var cn = new SqlConnection(_connectionString);
+        await using var cmd = new SqlCommand("dbo.usp_Categoria_ObtenerPorId", cn)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+        cmd.Parameters.Add("@CategoriaID", SqlDbType.Int).Value = categoriaId;
+
+        await cn.OpenAsync();
+        await using var reader = await cmd.ExecuteReaderAsync();
+        return await reader.ReadAsync() ? Map(reader) : null;
+    }
+
+    public async Task<List<Categoria>> ListarTodasAsync()
+    {
+        await using var cn = new SqlConnection(_connectionString);
+        await using var cmd = new SqlCommand("dbo.usp_Categoria_ListarTodas", cn)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        await cn.OpenAsync();
+        await using var reader = await cmd.ExecuteReaderAsync();
+        var lista = new List<Categoria>();
+        while (await reader.ReadAsync())
+            lista.Add(Map(reader));
+        return lista;
+    }
+
+    public async Task ActualizarAsync(Categoria c)
+    {
+        await using var cn = new SqlConnection(_connectionString);
+        await using var cmd = new SqlCommand("dbo.usp_Categoria_Actualizar", cn)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+        cmd.Parameters.Add("@CategoriaID", SqlDbType.Int).Value = c.CategoriaID;
+        cmd.Parameters.Add("@NombreCategoria", SqlDbType.NVarChar, 30).Value = c.NombreCategoria;
+        cmd.Parameters.Add("@Descripcion", SqlDbType.NVarChar, 200).Value = (object?)c.Descripcion ?? DBNull.Value;
+
+        await cn.OpenAsync();
+        await cmd.ExecuteNonQueryAsync();
+    }
+
+    public async Task EliminarAsync(int categoriaId)
+    {
+        await using var cn = new SqlConnection(_connectionString);
+        await using var cmd = new SqlCommand("dbo.usp_Categoria_Eliminar", cn)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+        cmd.Parameters.Add("@CategoriaID", SqlDbType.Int).Value = categoriaId;
+
+        await cn.OpenAsync();
+        await cmd.ExecuteNonQueryAsync();
+    }
+
+    private static Categoria Map(SqlDataReader r) => new()
+    {
+        CategoriaID = r.GetInt32(r.GetOrdinal("CategoriaID")),
+        NombreCategoria = r.GetString(r.GetOrdinal("NombreCategoria")),
+        Descripcion = r.IsDBNull(r.GetOrdinal("Descripcion")) ? null : r.GetString(r.GetOrdinal("Descripcion"))
+    };
 }

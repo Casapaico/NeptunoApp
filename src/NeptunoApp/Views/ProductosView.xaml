@@ -7,67 +7,57 @@
             <ColumnDefinition Width="340"/>
         </Grid.ColumnDefinitions>
 
-        <DockPanel Grid.Column="0" Margin="0,0,12,0">
-            <TextBlock DockPanel.Dock="Top" Text="Mantenimiento de Productos"
-                       FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
-            <DataGrid ItemsSource="{Binding Lista}" SelectedItem="{Binding Seleccionado}"
-                      AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Id"        Binding="{Binding IdProducto}"       Width="45"/>
-                    <DataGridTextColumn Header="Producto"  Binding="{Binding NombreProducto}"   Width="*"/>
-                    <DataGridTextColumn Header="Categoria" Binding="{Binding NombreCategoria}"  Width="130"/>
-                    <DataGridTextColumn Header="Proveedor" Binding="{Binding NombreProveedor}" Width="150"/>
-                    <DataGridTextColumn Header="Precio"    Binding="{Binding PrecioUnidad, StringFormat=C2}" Width="80"/>
-                    <DataGridTextColumn Header="Stock"     Binding="{Binding UnidadesEnExistencia}" Width="60"/>
-                    <DataGridCheckBoxColumn Header="Susp."  Binding="{Binding Suspendido}"       Width="50"/>
-                </DataGrid.Columns>
-            </DataGrid>
-        </DockPanel>
+        <DataGrid Grid.Column="0" Margin="0,0,16,0"
+                  ItemsSource="{Binding Items}" SelectedItem="{Binding Seleccionado}">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ID" Binding="{Binding ProductoID}" Width="45"/>
+                <DataGridTextColumn Header="Producto" Binding="{Binding NombreProducto}" Width="*"/>
+                <DataGridTextColumn Header="Categoria" Binding="{Binding Categoria}" Width="130"/>
+                <DataGridTextColumn Header="Proveedor" Binding="{Binding Proveedor}" Width="150"/>
+                <DataGridTextColumn Header="Precio" Binding="{Binding PrecioUnidad, StringFormat=C2}" Width="85"/>
+                <DataGridTextColumn Header="Stock" Binding="{Binding UnidadesEnExistencia}" Width="60"/>
+                <DataGridCheckBoxColumn Header="Desc." Binding="{Binding Descontinuado}" Width="50"/>
+            </DataGrid.Columns>
+        </DataGrid>
 
-        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel>
-                <TextBlock Text="Datos" FontWeight="Bold" Margin="0,0,0,8"/>
+        <Border Grid.Column="1" Style="{StaticResource Card}" VerticalAlignment="Top">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="580">
+                <StackPanel>
+                    <TextBlock Text="Datos del producto" FontWeight="SemiBold" Margin="0,0,0,12"/>
 
-                <TextBlock Text="Id"/>
-                <TextBox Text="{Binding Id}" IsReadOnly="True" Margin="0,2,0,8" Padding="5"/>
+                    <Label Content="ID"/>
+                    <TextBox Text="{Binding ProductoID}" IsReadOnly="True" Margin="0,0,0,8"/>
+                    <Label Content="Nombre *"/>
+                    <TextBox Text="{Binding NombreProducto, UpdateSourceTrigger=PropertyChanged}" MaxLength="60" Margin="0,0,0,8"/>
+                    <Label Content="Categoria"/>
+                    <ComboBox ItemsSource="{Binding Categorias}" SelectedItem="{Binding CategoriaSeleccionada}"
+                              DisplayMemberPath="Texto" Margin="0,0,0,8"/>
+                    <Label Content="Proveedor"/>
+                    <ComboBox ItemsSource="{Binding Proveedores}" SelectedItem="{Binding ProveedorSeleccionado}"
+                              DisplayMemberPath="Texto" Margin="0,0,0,8"/>
+                    <Label Content="Cantidad por unidad"/>
+                    <TextBox Text="{Binding CantidadPorUnidad, UpdateSourceTrigger=PropertyChanged}" MaxLength="30" Margin="0,0,0,8"/>
+                    <Label Content="Precio unidad"/>
+                    <TextBox Text="{Binding PrecioUnidad, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"/>
+                    <Label Content="Unidades en existencia"/>
+                    <TextBox Text="{Binding UnidadesEnExistencia, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"/>
+                    <Label Content="Unidades en pedido"/>
+                    <TextBox Text="{Binding UnidadesEnPedido, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"/>
+                    <Label Content="Nivel de reorden"/>
+                    <TextBox Text="{Binding NivelDeReorden, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"/>
+                    <CheckBox Content="Descontinuado" IsChecked="{Binding Descontinuado}" Margin="0,4,0,14"/>
 
-                <TextBlock Text="Nombre producto *"/>
-                <TextBox Text="{Binding NombreProducto, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" Padding="5"/>
+                    <UniformGrid Columns="2">
+                        <Button Content="Nuevo" Style="{StaticResource OutlineButton}" Margin="0,0,4,6" Command="{Binding NuevoCommand}"/>
+                        <Button Content="Guardar" Style="{StaticResource AccentButton}" Margin="4,0,0,6" Command="{Binding GuardarCommand}"/>
+                        <Button Content="Eliminar" Style="{StaticResource OutlineButton}" Margin="0,6,4,0" Command="{Binding EliminarCommand}"/>
+                        <Button Content="Refrescar" Style="{StaticResource OutlineButton}" Margin="4,6,0,0" Command="{Binding CargarCommand}"/>
+                    </UniformGrid>
 
-                <TextBlock Text="Categoria"/>
-                <ComboBox ItemsSource="{Binding Categorias}" SelectedItem="{Binding CategoriaSeleccionada}"
-                          DisplayMemberPath="Texto" Margin="0,2,0,8"/>
-
-                <TextBlock Text="Proveedor"/>
-                <ComboBox ItemsSource="{Binding Proveedores}" SelectedItem="{Binding ProveedorSeleccionado}"
-                          DisplayMemberPath="Texto" Margin="0,2,0,8"/>
-
-                <TextBlock Text="Cantidad por unidad"/>
-                <TextBox Text="{Binding CantidadPorUnidad, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" Padding="5"/>
-
-                <TextBlock Text="Precio unidad"/>
-                <TextBox Text="{Binding PrecioUnidad, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" Padding="5"/>
-
-                <TextBlock Text="Unidades en existencia"/>
-                <TextBox Text="{Binding UnidadesEnExistencia, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" Padding="5"/>
-
-                <TextBlock Text="Unidades en pedido"/>
-                <TextBox Text="{Binding UnidadesEnPedido, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" Padding="5"/>
-
-                <TextBlock Text="Nivel nuevo pedido"/>
-                <TextBox Text="{Binding NivelNuevoPedido, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" Padding="5"/>
-
-                <CheckBox Content="Suspendido" IsChecked="{Binding Suspendido}" Margin="0,4,0,12"/>
-
-                <UniformGrid Columns="2">
-                    <Button Content="Nuevo"    Height="34" Margin="0,0,4,4" Command="{Binding NuevoCommand}"/>
-                    <Button Content="Guardar"  Height="34" Margin="4,0,0,4" Command="{Binding GuardarCommand}"/>
-                    <Button Content="Eliminar" Height="34" Margin="0,4,4,0" Command="{Binding EliminarCommand}"/>
-                    <Button Content="Refrescar" Height="34" Margin="4,4,0,0" Command="{Binding RefrescarCommand}"/>
-                </UniformGrid>
-
-                <TextBlock Text="{Binding Mensaje}" Foreground="#B45309" TextWrapping="Wrap" Margin="0,12,0,0"/>
-            </StackPanel>
-        </ScrollViewer>
+                    <TextBlock Text="{Binding Mensaje}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" Margin="0,14,0,0"
+                               Visibility="{Binding Mensaje, Converter={StaticResource StringNullOrEmptyToVisibility}}"/>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
     </Grid>
 </UserControl>

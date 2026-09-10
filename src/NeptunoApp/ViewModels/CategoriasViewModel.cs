@@ -1,130 +1,117 @@
-using System;
 using System.Collections.ObjectModel;
 using System.Windows;
-using System.Windows.Input;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using NeptunoApp.Data;
-using NeptunoApp.Helpers;
 using NeptunoApp.Models;
 
-namespace NeptunoApp.ViewModels
+namespace NeptunoApp.ViewModels;
+
+/// <summary>Mantenimiento (CRUD) de Categorias.</summary>
+public partial class CategoriasViewModel : ObservableObject
 {
-    /// <summary>Mantenimiento (CRUD) de Categorias usando procedimientos almacenados.</summary>
-    public class CategoriasViewModel : ViewModelBase
+    private readonly ICategoriaRepository _repo;
+
+    public ObservableCollection<Categoria> Items { get; } = new();
+
+    [ObservableProperty] private Categoria? seleccionada;
+    [ObservableProperty] private int categoriaID;
+    [ObservableProperty] private string nombreCategoria = string.Empty;
+    [ObservableProperty] private string? descripcion;
+    [ObservableProperty] private string? mensaje;
+    [ObservableProperty] private bool isBusy;
+
+    public bool EsEdicion => CategoriaID != 0;
+
+    public CategoriasViewModel(ICategoriaRepository repo)
     {
-        private readonly CategoriaRepository _repo = new CategoriaRepository();
+        _repo = repo;
+        _ = CargarAsync();
+    }
 
-        public ObservableCollection<Categoria> Lista { get; } = new ObservableCollection<Categoria>();
+    partial void OnSeleccionadaChanged(Categoria? value)
+    {
+        if (value is null) return;
+        CategoriaID = value.CategoriaID;
+        NombreCategoria = value.NombreCategoria;
+        Descripcion = value.Descripcion;
+        OnPropertyChanged(nameof(EsEdicion));
+    }
 
-        private Categoria _seleccionada;
-        public Categoria Seleccionada
+    partial void OnCategoriaIDChanged(int value) => OnPropertyChanged(nameof(EsEdicion));
+
+    [RelayCommand]
+    private async Task CargarAsync()
+    {
+        IsBusy = true;
+        Mensaje = null;
+        try
         {
-            get => _seleccionada;
-            set
+            var datos = await _repo.ListarTodasAsync();
+            Items.Clear();
+            foreach (var c in datos) Items.Add(c);
+            Nuevo();
+        }
+        catch (Exception ex) { Mensaje = $"Error al cargar: {ex.Message}"; }
+        finally { IsBusy = false; }
+    }
+
+    [RelayCommand]
+    private void Nuevo()
+    {
+        Seleccionada = null;
+        CategoriaID = 0;
+        NombreCategoria = string.Empty;
+        Descripcion = null;
+        Mensaje = null;
+    }
+
+    [RelayCommand]
+    private async Task GuardarAsync()
+    {
+        if (string.IsNullOrWhiteSpace(NombreCategoria))
+        {
+            Mensaje = "El nombre de la categoria es obligatorio.";
+            return;
+        }
+
+        try
+        {
+            var c = new Categoria
             {
-                if (SetProperty(ref _seleccionada, value) && value != null)
-                {
-                    IdCategoria = value.IdCategoria;
-                    NombreCategoria = value.NombreCategoria;
-                    Descripcion = value.Descripcion;
-                }
+                CategoriaID = CategoriaID,
+                NombreCategoria = NombreCategoria.Trim(),
+                Descripcion = string.IsNullOrWhiteSpace(Descripcion) ? null : Descripcion.Trim()
+            };
+
+            if (CategoriaID == 0)
+            {
+                var id = await _repo.CrearAsync(c);
+                Mensaje = $"Categoria creada (ID {id}).";
             }
-        }
-
-        private int _idCategoria;
-        public int IdCategoria { get => _idCategoria; set => SetProperty(ref _idCategoria, value); }
-
-        private string _nombreCategoria;
-        public string NombreCategoria { get => _nombreCategoria; set => SetProperty(ref _nombreCategoria, value); }
-
-        private string _descripcion;
-        public string Descripcion { get => _descripcion; set => SetProperty(ref _descripcion, value); }
-
-        private string _mensaje;
-        public string Mensaje { get => _mensaje; set => SetProperty(ref _mensaje, value); }
-
-        public ICommand NuevoCommand { get; }
-        public ICommand GuardarCommand { get; }
-        public ICommand EliminarCommand { get; }
-        public ICommand RefrescarCommand { get; }
-
-        public CategoriasViewModel()
-        {
-            NuevoCommand = new RelayCommand(_ => Limpiar());
-            GuardarCommand = new RelayCommand(_ => Guardar());
-            EliminarCommand = new RelayCommand(_ => Eliminar(), _ => IdCategoria > 0);
-            RefrescarCommand = new RelayCommand(_ => Cargar());
-            Cargar();
-        }
-
-        private void Cargar()
-        {
-            Ejecutar(() =>
+            else
             {
-                Lista.Clear();
-                foreach (var c in _repo.Listar()) Lista.Add(c);
-                Limpiar();
-            });
-        }
-
-        private void Limpiar()
-        {
-            Seleccionada = null;
-            IdCategoria = 0;
-            NombreCategoria = string.Empty;
-            Descripcion = string.Empty;
-            Mensaje = string.Empty;
-        }
-
-        private void Guardar()
-        {
-            if (string.IsNullOrWhiteSpace(NombreCategoria))
-            {
-                Mensaje = "El nombre de la categoria es obligatorio.";
-                return;
+                await _repo.ActualizarAsync(c);
+                Mensaje = "Categoria actualizada.";
             }
-
-            Ejecutar(() =>
-            {
-                var c = new Categoria
-                {
-                    IdCategoria = IdCategoria,
-                    NombreCategoria = NombreCategoria.Trim(),
-                    Descripcion = string.IsNullOrWhiteSpace(Descripcion) ? null : Descripcion.Trim()
-                };
-
-                if (IdCategoria == 0)
-                {
-                    int nuevoId = _repo.Insertar(c);
-                    Mensaje = $"Categoria creada (Id {nuevoId}).";
-                }
-                else
-                {
-                    _repo.Actualizar(c);
-                    Mensaje = "Categoria actualizada.";
-                }
-                Cargar();
-            });
+            await CargarAsync();
         }
+        catch (Exception ex) { Mensaje = $"No se pudo guardar: {ex.Message}"; }
+    }
 
-        private void Eliminar()
+    [RelayCommand]
+    private async Task EliminarAsync()
+    {
+        if (CategoriaID == 0) return;
+        if (MessageBox.Show($"¿Eliminar la categoria \"{NombreCategoria}\"?", "Confirmar",
+                MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+
+        try
         {
-            if (IdCategoria == 0) return;
-            if (MessageBox.Show($"Eliminar la categoria '{NombreCategoria}'?", "Confirmar",
-                    MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
-                return;
-
-            Ejecutar(() =>
-            {
-                _repo.Eliminar(IdCategoria);
-                Mensaje = "Categoria eliminada.";
-                Cargar();
-            });
+            await _repo.EliminarAsync(CategoriaID);
+            Mensaje = "Categoria eliminada.";
+            await CargarAsync();
         }
-
-        private void Ejecutar(Action accion)
-        {
-            try { accion(); }
-            catch (Exception ex) { Mensaje = "Error: " + ex.Message; }
-        }
+        catch (Exception ex) { Mensaje = $"No se pudo eliminar: {ex.Message}"; }
     }
 }

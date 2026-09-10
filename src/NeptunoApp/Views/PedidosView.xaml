@@ -7,80 +7,69 @@
             <ColumnDefinition Width="320"/>
         </Grid.ColumnDefinitions>
 
-        <DockPanel Grid.Column="0" Margin="0,0,12,0">
-            <TextBlock DockPanel.Dock="Top" Text="Mantenimiento de Pedidos"
-                       FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
-
-            <TextBlock DockPanel.Dock="Bottom" Text="Detalle del pedido seleccionado"
-                       FontWeight="Bold" Margin="0,10,0,4"/>
-            <DataGrid DockPanel.Dock="Bottom" Height="170" ItemsSource="{Binding Detalle}"
-                      AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False">
+        <DockPanel Grid.Column="0" Margin="0,0,16,0">
+            <TextBlock DockPanel.Dock="Bottom" Text="Detalle del pedido seleccionado" FontWeight="SemiBold" Margin="0,12,0,6"/>
+            <DataGrid DockPanel.Dock="Bottom" Height="180" ItemsSource="{Binding Detalle}">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Producto" Binding="{Binding NombreProducto}" Width="*"/>
-                    <DataGridTextColumn Header="P. Unit"  Binding="{Binding PrecioUnidad, StringFormat=C2}" Width="90"/>
-                    <DataGridTextColumn Header="Cant."    Binding="{Binding Cantidad}" Width="60"/>
-                    <DataGridTextColumn Header="Dscto"    Binding="{Binding Descuento, StringFormat=P0}" Width="60"/>
+                    <DataGridTextColumn Header="P. Unit" Binding="{Binding PrecioUnidad, StringFormat=C2}" Width="90"/>
+                    <DataGridTextColumn Header="Cant." Binding="{Binding Cantidad}" Width="60"/>
+                    <DataGridTextColumn Header="Dscto" Binding="{Binding Descuento, StringFormat=P0}" Width="60"/>
                     <DataGridTextColumn Header="Subtotal" Binding="{Binding Subtotal, StringFormat=C2}" Width="100"/>
                 </DataGrid.Columns>
             </DataGrid>
 
-            <DataGrid ItemsSource="{Binding Lista}" SelectedItem="{Binding Seleccionado}"
-                      AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False">
+            <DataGrid ItemsSource="{Binding Items}" SelectedItem="{Binding Seleccionado}">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Id"       Binding="{Binding IdPedido}" Width="45"/>
-                    <DataGridTextColumn Header="Cliente"  Binding="{Binding NombreCliente}" Width="*"/>
-                    <DataGridTextColumn Header="Empleado" Binding="{Binding NombreEmpleado}" Width="130"/>
-                    <DataGridTextColumn Header="F. Pedido" Binding="{Binding FechaPedido, StringFormat=d}" Width="90"/>
-                    <DataGridTextColumn Header="Total"    Binding="{Binding TotalPedido, StringFormat=C2}" Width="90"/>
+                    <DataGridTextColumn Header="ID" Binding="{Binding PedidoID}" Width="45"/>
+                    <DataGridTextColumn Header="Cliente" Binding="{Binding Cliente}" Width="*"/>
+                    <DataGridTextColumn Header="Empleado" Binding="{Binding Empleado}" Width="140"/>
+                    <DataGridTextColumn Header="F. Pedido" Binding="{Binding FechaPedido, StringFormat=d}" Width="95"/>
+                    <DataGridTextColumn Header="Total" Binding="{Binding TotalPedido, StringFormat=C2}" Width="95"/>
                 </DataGrid.Columns>
             </DataGrid>
         </DockPanel>
 
-        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel>
-                <TextBlock Text="Datos de cabecera" FontWeight="Bold" Margin="0,0,0,8"/>
+        <Border Grid.Column="1" Style="{StaticResource Card}" VerticalAlignment="Top">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="580">
+                <StackPanel>
+                    <TextBlock Text="Cabecera del pedido" FontWeight="SemiBold" Margin="0,0,0,12"/>
 
-                <TextBlock Text="Id"/>
-                <TextBox Text="{Binding Id}" IsReadOnly="True" Margin="0,2,0,8" Padding="5"/>
+                    <Label Content="ID"/>
+                    <TextBox Text="{Binding PedidoID}" IsReadOnly="True" Margin="0,0,0,8"/>
+                    <Label Content="Cliente *"/>
+                    <ComboBox ItemsSource="{Binding Clientes}" SelectedItem="{Binding ClienteSeleccionado}"
+                              DisplayMemberPath="Texto" Margin="0,0,0,8"/>
+                    <Label Content="Empleado"/>
+                    <ComboBox ItemsSource="{Binding Empleados}" SelectedItem="{Binding EmpleadoSeleccionado}"
+                              DisplayMemberPath="Texto" Margin="0,0,0,8"/>
+                    <Label Content="Transportista"/>
+                    <ComboBox ItemsSource="{Binding Transportistas}" SelectedItem="{Binding TransportistaSeleccionado}"
+                              DisplayMemberPath="Texto" Margin="0,0,0,8"/>
+                    <Label Content="Fecha pedido *"/>
+                    <DatePicker SelectedDate="{Binding FechaPedido}" Margin="0,0,0,8"/>
+                    <Label Content="Fecha requerida"/>
+                    <DatePicker SelectedDate="{Binding FechaRequerida}" Margin="0,0,0,8"/>
+                    <Label Content="Fecha envio"/>
+                    <DatePicker SelectedDate="{Binding FechaEnvio}" Margin="0,0,0,8"/>
+                    <Label Content="Destinatario"/>
+                    <TextBox Text="{Binding Destinatario, UpdateSourceTrigger=PropertyChanged}" MaxLength="60" Margin="0,0,0,8"/>
+                    <Label Content="Ciudad destino"/>
+                    <TextBox Text="{Binding CiudadDestino, UpdateSourceTrigger=PropertyChanged}" MaxLength="30" Margin="0,0,0,8"/>
+                    <Label Content="Pais destino"/>
+                    <TextBox Text="{Binding PaisDestino, UpdateSourceTrigger=PropertyChanged}" MaxLength="30" Margin="0,0,0,14"/>
 
-                <TextBlock Text="Cliente *"/>
-                <ComboBox ItemsSource="{Binding Clientes}" SelectedItem="{Binding ClienteSeleccionado}"
-                          DisplayMemberPath="Texto" Margin="0,2,0,8"/>
+                    <UniformGrid Columns="2">
+                        <Button Content="Nuevo" Style="{StaticResource OutlineButton}" Margin="0,0,4,6" Command="{Binding NuevoCommand}"/>
+                        <Button Content="Guardar" Style="{StaticResource AccentButton}" Margin="4,0,0,6" Command="{Binding GuardarCommand}"/>
+                        <Button Content="Eliminar" Style="{StaticResource OutlineButton}" Margin="0,6,4,0" Command="{Binding EliminarCommand}"/>
+                        <Button Content="Refrescar" Style="{StaticResource OutlineButton}" Margin="4,6,0,0" Command="{Binding CargarCommand}"/>
+                    </UniformGrid>
 
-                <TextBlock Text="Empleado"/>
-                <ComboBox ItemsSource="{Binding Empleados}" SelectedItem="{Binding EmpleadoSeleccionado}"
-                          DisplayMemberPath="Texto" Margin="0,2,0,8"/>
-
-                <TextBlock Text="Fecha pedido"/>
-                <DatePicker SelectedDate="{Binding FechaPedido}" Margin="0,2,0,8"/>
-
-                <TextBlock Text="Fecha entrega"/>
-                <DatePicker SelectedDate="{Binding FechaEntrega}" Margin="0,2,0,8"/>
-
-                <TextBlock Text="Fecha envio"/>
-                <DatePicker SelectedDate="{Binding FechaEnvio}" Margin="0,2,0,8"/>
-
-                <TextBlock Text="Flete"/>
-                <TextBox Text="{Binding Flete, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" Padding="5"/>
-
-                <TextBlock Text="Destinatario"/>
-                <TextBox Text="{Binding Destinatario, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" Padding="5"/>
-
-                <TextBlock Text="Ciudad destino"/>
-                <TextBox Text="{Binding CiudadDestino, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" Padding="5"/>
-
-                <TextBlock Text="Pais destino"/>
-                <TextBox Text="{Binding PaisDestino, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,12" Padding="5"/>
-
-                <UniformGrid Columns="2">
-                    <Button Content="Nuevo"    Height="34" Margin="0,0,4,4" Command="{Binding NuevoCommand}"/>
-                    <Button Content="Guardar"  Height="34" Margin="4,0,0,4" Command="{Binding GuardarCommand}"/>
-                    <Button Content="Eliminar" Height="34" Margin="0,4,4,0" Command="{Binding EliminarCommand}"/>
-                    <Button Content="Refrescar" Height="34" Margin="4,4,0,0" Command="{Binding RefrescarCommand}"/>
-                </UniformGrid>
-
-                <TextBlock Text="{Binding Mensaje}" Foreground="#B45309" TextWrapping="Wrap" Margin="0,12,0,0"/>
-            </StackPanel>
-        </ScrollViewer>
+                    <TextBlock Text="{Binding Mensaje}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" Margin="0,14,0,0"
+                               Visibility="{Binding Mensaje, Converter={StaticResource StringNullOrEmptyToVisibility}}"/>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
     </Grid>
 </UserControl>

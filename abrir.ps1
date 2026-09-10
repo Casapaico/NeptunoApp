@@ -2,10 +2,9 @@
     abrir.ps1  -  Compila y ejecuta NeptunoApp en Windows.
 
     Uso (PowerShell, desde la carpeta del proyecto):
-        .\abrir.ps1
-
-    Si PowerShell bloquea el script:
         powershell -ExecutionPolicy Bypass -File .\abrir.ps1
+
+    Requisitos: .NET 10 SDK (o abrir src\NeptunoApp.slnx en Visual Studio 2022 y pulsar F5).
 #>
 
 $ErrorActionPreference = 'Stop'
@@ -21,20 +20,19 @@ try {
     $sdk = (dotnet --version)
     Write-Host "SDK .NET detectado: $sdk"
 } catch {
-    Write-Host 'ERROR: no se encontro el SDK de .NET.' -ForegroundColor Red
-    Write-Host 'Instala .NET 8 SDK (o abre src\NeptunoApp.sln en Visual Studio 2022).'
+    Write-Host 'ERROR: no se encontro el SDK de .NET. Instala .NET 10 SDK o abre src\NeptunoApp.slnx en Visual Studio 2022.' -ForegroundColor Red
     exit 1
 }
 
-# 2. Probar conexion de red con la laptop (SQL Server)
+# 2. Probar la conexion de red con la laptop (SQL Server)
 Write-Host "`nProbando conexion con SQL Server en $ipServidor`:$puerto ..." -ForegroundColor Cyan
 $test = Test-NetConnection -ComputerName $ipServidor -Port $puerto -WarningAction SilentlyContinue
 if ($test.TcpTestSucceeded) {
     Write-Host 'Conexion de red OK.' -ForegroundColor Green
 } else {
     Write-Host 'AVISO: no se pudo conectar al puerto 1433 de la laptop.' -ForegroundColor Yellow
-    Write-Host ' - Verifica que ambas PC esten en la WiFi "iPhone de Alumno".'
-    Write-Host " - Confirma la IP de la laptop (hostname -I) y ajustala en src\NeptunoApp\App.config."
+    Write-Host ' - Ambas PC deben estar en la WiFi "iPhone de Alumno" (ipconfig -> 172.20.10.x).'
+    Write-Host " - Verifica la IP de la laptop (hostname -I) y ajustala en src\NeptunoApp\Data\DbConfig.cs."
     Write-Host ' - Continuo de todos modos...'
 }
 

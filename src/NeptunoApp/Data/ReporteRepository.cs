@@ -1,35 +1,42 @@
-using System;
 using System.Data;
 using Microsoft.Data.SqlClient;
+using NeptunoApp.Models;
 
-namespace NeptunoApp.Data
+namespace NeptunoApp.Data;
+
+public class ReporteRepository : IReporteRepository
 {
-    /// <summary>
-    /// Reportes con PROCEDIMIENTOS ALMACENADOS.
-    /// Devuelve DataTable en modo DESCONECTADO (SqlDataAdapter.Fill) para
-    /// enlazarlo directamente a un DataGrid.
-    /// </summary>
-    public class ReporteRepository
+    private readonly string _connectionString;
+
+    public ReporteRepository(string connectionString) => _connectionString = connectionString;
+
+    public async Task<List<LineaReporte>> DetallePedidosPorRangoFechasAsync(DateTime fechaInicio, DateTime fechaFin)
     {
-        /// <summary>
-        /// Detalles de pedidos (INNER JOIN con Pedidos) filtrando por un
-        /// intervalo de fechas. Ejecuta usp_DetallesPedidos_PorRangoFechas.
-        /// </summary>
-        public DataTable DetallesPedidosPorRangoFechas(DateTime fechaInicio, DateTime fechaFin)
+        await using var cn = new SqlConnection(_connectionString);
+        await using var cmd = new SqlCommand("dbo.usp_DetallePedido_ListarPorRangoFechas", cn)
         {
-            var tabla = new DataTable("DetallesPedidos");
+            CommandType = CommandType.StoredProcedure
+        };
+        cmd.Parameters.Add("@FechaInicio", SqlDbType.Date).Value = fechaInicio.Date;
+        cmd.Parameters.Add("@FechaFin", SqlDbType.Date).Value = fechaFin.Date;
 
-            using (var cn = new SqlConnection(ConexionBD.CadenaConexion))
-            using (var cmd = new SqlCommand("dbo.usp_DetallesPedidos_PorRangoFechas", cn) { CommandType = CommandType.StoredProcedure })
+        await cn.OpenAsync();
+        await using var reader = await cmd.ExecuteReaderAsync();
+        var lista = new List<LineaReporte>();
+        while (await reader.ReadAsync())
+        {
+            lista.Add(new LineaReporte
             {
-                cmd.Parameters.AddWithValue("@FechaInicio", fechaInicio.Date);
-                cmd.Parameters.AddWithValue("@FechaFin", fechaFin.Date);
-
-                using (var adapter = new SqlDataAdapter(cmd))
-                    adapter.Fill(tabla);   // la conexion se abre y cierra internamente
-            }
-
-            return tabla;                  // datos desconectados, viven en memoria
+                PedidoID = reader.GetInt32(reader.GetOrdinal("PedidoID")),
+                FechaPedido = Convert.ToDateTime(reader["FechaPedido"]),
+                Cliente = reader.GetStringOrNull("Cliente"),
+                Producto = reader.GetStringOrNull("Producto"),
+                PrecioUnidad = reader.GetDecimalSafe("PrecioUnidad"),
+                Cantidad = reader.GetInt16Safe("Cantidad"),
+                Descuento = reader.GetDecimalSafe("Descuento"),
+                Subtotal = reader.GetDecimalSafe("Subtotal")
+            });
         }
+        return lista;
     }
 }

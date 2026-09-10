@@ -1,12 +1,13 @@
-namespace NeptunoApp.Models
+using CommunityToolkit.Mvvm.ComponentModel;
+
+namespace NeptunoApp.Models;
+
+public partial class DetallePedido : ObservableObject
 {
-    public class DetallePedido
-    {
-        public int IdProducto { get; set; }
-        public string NombreProducto { get; set; }
-        public decimal PrecioUnidad { get; set; }
-        public short Cantidad { get; set; }
-        public double Descuento { get; set; }
-        public decimal Subtotal { get; set; }
-    }
+    [ObservableProperty] private int productoID;
+    [ObservableProperty] private string nombreProducto = string.Empty;
+    [ObservableProperty] private decimal precioUnidad;
+    [ObservableProperty] private short cantidad;
+    [ObservableProperty] private decimal descuento;
+    [ObservableProperty] private decimal subtotal;
 }

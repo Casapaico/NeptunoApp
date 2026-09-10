@@ -1,9 +1,8 @@
 using System.Windows.Controls;
 
-namespace NeptunoApp.Views
+namespace NeptunoApp.Views;
+
+public partial class PedidosView : UserControl
 {
-    public partial class PedidosView : UserControl
-    {
-        public PedidosView() => InitializeComponent();
-    }
+    public PedidosView() => InitializeComponent();
 }

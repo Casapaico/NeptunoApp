@@ -4,44 +4,43 @@
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="320"/>
+            <ColumnDefinition Width="330"/>
         </Grid.ColumnDefinitions>
 
-        <DockPanel Grid.Column="0" Margin="0,0,12,0">
-            <TextBlock DockPanel.Dock="Top" Text="Mantenimiento de Categorias"
-                       FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
-            <DataGrid ItemsSource="{Binding Lista}" SelectedItem="{Binding Seleccionada}"
-                      AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Id"          Binding="{Binding IdCategoria}"     Width="50"/>
-                    <DataGridTextColumn Header="Nombre"      Binding="{Binding NombreCategoria}" Width="180"/>
-                    <DataGridTextColumn Header="Descripcion" Binding="{Binding Descripcion}"     Width="*"/>
-                </DataGrid.Columns>
-            </DataGrid>
-        </DockPanel>
+        <DataGrid Grid.Column="0" Margin="0,0,16,0"
+                  ItemsSource="{Binding Items}" SelectedItem="{Binding Seleccionada}">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ID" Binding="{Binding CategoriaID}" Width="60"/>
+                <DataGridTextColumn Header="Nombre" Binding="{Binding NombreCategoria}" Width="180"/>
+                <DataGridTextColumn Header="Descripcion" Binding="{Binding Descripcion}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
 
-        <StackPanel Grid.Column="1">
-            <TextBlock Text="Datos" FontWeight="Bold" Margin="0,0,0,8"/>
+        <Border Grid.Column="1" Style="{StaticResource Card}" VerticalAlignment="Top">
+            <StackPanel>
+                <TextBlock Text="Datos de la categoria" FontWeight="SemiBold" Margin="0,0,0,12"/>
 
-            <TextBlock Text="Id"/>
-            <TextBox Text="{Binding IdCategoria}" IsReadOnly="True" Margin="0,2,0,10" Padding="5"/>
+                <Label Content="ID"/>
+                <TextBox Text="{Binding CategoriaID}" IsReadOnly="True" Margin="0,0,0,10"/>
 
-            <TextBlock Text="Nombre *"/>
-            <TextBox Text="{Binding NombreCategoria, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,10" Padding="5"/>
+                <Label Content="Nombre *"/>
+                <TextBox Text="{Binding NombreCategoria, UpdateSourceTrigger=PropertyChanged}" MaxLength="30" Margin="0,0,0,10"/>
 
-            <TextBlock Text="Descripcion"/>
-            <TextBox Text="{Binding Descripcion, UpdateSourceTrigger=PropertyChanged}"
-                     AcceptsReturn="True" Height="80" TextWrapping="Wrap"
-                     VerticalScrollBarVisibility="Auto" Margin="0,2,0,12" Padding="5"/>
+                <Label Content="Descripcion"/>
+                <TextBox Text="{Binding Descripcion, UpdateSourceTrigger=PropertyChanged}" MaxLength="200"
+                         AcceptsReturn="True" TextWrapping="Wrap" Height="80"
+                         VerticalScrollBarVisibility="Auto" Margin="0,0,0,14"/>
 
-            <UniformGrid Columns="2">
-                <Button Content="Nuevo"    Height="34" Margin="0,0,4,4" Command="{Binding NuevoCommand}"/>
-                <Button Content="Guardar"  Height="34" Margin="4,0,0,4" Command="{Binding GuardarCommand}"/>
-                <Button Content="Eliminar" Height="34" Margin="0,4,4,0" Command="{Binding EliminarCommand}"/>
-                <Button Content="Refrescar" Height="34" Margin="4,4,0,0" Command="{Binding RefrescarCommand}"/>
-            </UniformGrid>
+                <UniformGrid Columns="2">
+                    <Button Content="Nuevo" Style="{StaticResource OutlineButton}" Margin="0,0,4,6" Command="{Binding NuevoCommand}"/>
+                    <Button Content="Guardar" Style="{StaticResource AccentButton}" Margin="4,0,0,6" Command="{Binding GuardarCommand}"/>
+                    <Button Content="Eliminar" Style="{StaticResource OutlineButton}" Margin="0,6,4,0" Command="{Binding EliminarCommand}"/>
+                    <Button Content="Refrescar" Style="{StaticResource OutlineButton}" Margin="4,6,0,0" Command="{Binding CargarCommand}"/>
+                </UniformGrid>
 
-            <TextBlock Text="{Binding Mensaje}" Foreground="#B45309" TextWrapping="Wrap" Margin="0,12,0,0"/>
-        </StackPanel>
+                <TextBlock Text="{Binding Mensaje}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" Margin="0,14,0,0"
+                           Visibility="{Binding Mensaje, Converter={StaticResource StringNullOrEmptyToVisibility}}"/>
+            </StackPanel>
+        </Border>
     </Grid>
 </UserControl>

@@ -1,112 +1,121 @@
-using System;
-using System.Collections.Generic;
 using System.Data;
 using Microsoft.Data.SqlClient;
 using NeptunoApp.Models;
 
-namespace NeptunoApp.Data
+namespace NeptunoApp.Data;
+
+public class ProductoRepository : IProductoRepository
 {
-    /// <summary>
-    /// Acceso a datos de Productos mediante PROCEDIMIENTOS ALMACENADOS.
-    /// Listado en modo CONECTADO (SqlDataReader).
-    /// </summary>
-    public class ProductoRepository
+    private readonly string _connectionString;
+
+    public ProductoRepository(string connectionString) => _connectionString = connectionString;
+
+    public async Task<int> CrearAsync(Producto p)
     {
-        public List<Producto> Listar()
+        await using var cn = new SqlConnection(_connectionString);
+        await using var cmd = new SqlCommand("dbo.usp_Producto_Crear", cn)
         {
-            var lista = new List<Producto>();
-            using (var cn = new SqlConnection(ConexionBD.CadenaConexion))
-            using (var cmd = new SqlCommand("dbo.usp_Productos_Listar", cn) { CommandType = CommandType.StoredProcedure })
-            {
-                cn.Open();
-                using (var reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        lista.Add(new Producto
-                        {
-                            IdProducto = (int)reader["IdProducto"],
-                            NombreProducto = reader["NombreProducto"].ToString(),
-                            IdProveedor = Nid(reader, "IdProveedor"),
-                            IdCategoria = Nid(reader, "IdCategoria"),
-                            NombreProveedor = Str(reader, "NombreProveedor"),
-                            NombreCategoria = Str(reader, "NombreCategoria"),
-                            CantidadPorUnidad = Str(reader, "CantidadPorUnidad"),
-                            PrecioUnidad = (decimal)reader["PrecioUnidad"],
-                            UnidadesEnExistencia = (short)reader["UnidadesEnExistencia"],
-                            UnidadesEnPedido = (short)reader["UnidadesEnPedido"],
-                            NivelNuevoPedido = (short)reader["NivelNuevoPedido"],
-                            Suspendido = (bool)reader["Suspendido"]
-                        });
-                    }
-                }
-            }
-            return lista;
-        }
+            CommandType = CommandType.StoredProcedure
+        };
+        AgregarParametros(cmd, p, incluirId: false);
 
-        public int Insertar(Producto p)
+        await cn.OpenAsync();
+        var result = await cmd.ExecuteScalarAsync();
+        return Convert.ToInt32(result);
+    }
+
+    public async Task<Producto?> ObtenerPorIdAsync(int productoId)
+    {
+        await using var cn = new SqlConnection(_connectionString);
+        await using var cmd = new SqlCommand("dbo.usp_Producto_ObtenerPorId", cn)
         {
-            using (var cn = new SqlConnection(ConexionBD.CadenaConexion))
-            using (var cmd = new SqlCommand("dbo.usp_Productos_Insertar", cn) { CommandType = CommandType.StoredProcedure })
-            {
-                CargarParametros(cmd, p, incluirId: false);
-                var pId = new SqlParameter("@IdProducto", SqlDbType.Int) { Direction = ParameterDirection.Output };
-                cmd.Parameters.Add(pId);
+            CommandType = CommandType.StoredProcedure
+        };
+        cmd.Parameters.Add("@ProductoID", SqlDbType.Int).Value = productoId;
 
-                cn.Open();
-                cmd.ExecuteNonQuery();
-                return (int)pId.Value;
-            }
-        }
+        await cn.OpenAsync();
+        await using var reader = await cmd.ExecuteReaderAsync();
+        return await reader.ReadAsync() ? Map(reader) : null;
+    }
 
-        public void Actualizar(Producto p)
+    public async Task<List<Producto>> ListarTodasAsync()
+    {
+        await using var cn = new SqlConnection(_connectionString);
+        await using var cmd = new SqlCommand("dbo.usp_Producto_ListarTodas", cn)
         {
-            using (var cn = new SqlConnection(ConexionBD.CadenaConexion))
-            using (var cmd = new SqlCommand("dbo.usp_Productos_Actualizar", cn) { CommandType = CommandType.StoredProcedure })
-            {
-                CargarParametros(cmd, p, incluirId: true);
-                cn.Open();
-                cmd.ExecuteNonQuery();
-            }
-        }
+            CommandType = CommandType.StoredProcedure
+        };
 
-        public void Eliminar(int idProducto)
-        {
-            using (var cn = new SqlConnection(ConexionBD.CadenaConexion))
-            using (var cmd = new SqlCommand("dbo.usp_Productos_Eliminar", cn) { CommandType = CommandType.StoredProcedure })
-            {
-                cmd.Parameters.AddWithValue("@IdProducto", idProducto);
-                cn.Open();
-                cmd.ExecuteNonQuery();
-            }
-        }
+        await cn.OpenAsync();
+        await using var reader = await cmd.ExecuteReaderAsync();
+        var lista = new List<Producto>();
+        while (await reader.ReadAsync())
+            lista.Add(Map(reader));
+        return lista;
+    }
 
-        // ------------------------------------------------------------------
-        private static void CargarParametros(SqlCommand cmd, Producto p, bool incluirId)
+    public async Task ActualizarAsync(Producto p)
+    {
+        await using var cn = new SqlConnection(_connectionString);
+        await using var cmd = new SqlCommand("dbo.usp_Producto_Actualizar", cn)
         {
-            if (incluirId) cmd.Parameters.AddWithValue("@IdProducto", p.IdProducto);
-            cmd.Parameters.AddWithValue("@NombreProducto", p.NombreProducto);
-            cmd.Parameters.AddWithValue("@IdProveedor", (object)p.IdProveedor ?? DBNull.Value);
-            cmd.Parameters.AddWithValue("@IdCategoria", (object)p.IdCategoria ?? DBNull.Value);
-            cmd.Parameters.AddWithValue("@CantidadPorUnidad",
-                string.IsNullOrWhiteSpace(p.CantidadPorUnidad) ? (object)DBNull.Value : p.CantidadPorUnidad.Trim());
-            cmd.Parameters.AddWithValue("@PrecioUnidad", p.PrecioUnidad);
-            cmd.Parameters.AddWithValue("@UnidadesEnExistencia", p.UnidadesEnExistencia);
-            cmd.Parameters.AddWithValue("@UnidadesEnPedido", p.UnidadesEnPedido);
-            cmd.Parameters.AddWithValue("@NivelNuevoPedido", p.NivelNuevoPedido);
-            cmd.Parameters.AddWithValue("@Suspendido", p.Suspendido);
-        }
+            CommandType = CommandType.StoredProcedure
+        };
+        AgregarParametros(cmd, p, incluirId: true);
 
-        private static int? Nid(SqlDataReader r, string col)
-        {
-            int i = r.GetOrdinal(col);
-            return r.IsDBNull(i) ? (int?)null : r.GetInt32(i);
-        }
+        await cn.OpenAsync();
+        await cmd.ExecuteNonQueryAsync();
+    }
 
-        private static string Str(SqlDataReader r, string col)
+    public async Task EliminarAsync(int productoId)
+    {
+        await using var cn = new SqlConnection(_connectionString);
+        await using var cmd = new SqlCommand("dbo.usp_Producto_Eliminar", cn)
         {
-            int i = r.GetOrdinal(col);
-            return r.IsDBNull(i) ? null : r.GetValue(i).ToString();
-        }
+            CommandType = CommandType.StoredProcedure
+        };
+        cmd.Parameters.Add("@ProductoID", SqlDbType.Int).Value = productoId;
+
+        await cn.OpenAsync();
+        await cmd.ExecuteNonQueryAsync();
+    }
+
+    // -----------------------------------------------------------------
+    private static void AgregarParametros(SqlCommand cmd, Producto p, bool incluirId)
+    {
+        if (incluirId) cmd.Parameters.Add("@ProductoID", SqlDbType.Int).Value = p.ProductoID;
+        cmd.Parameters.Add("@NombreProducto", SqlDbType.NVarChar, 60).Value = p.NombreProducto;
+        cmd.Parameters.Add("@ProveedorID", SqlDbType.Int).Value = (object?)p.ProveedorID ?? DBNull.Value;
+        cmd.Parameters.Add("@CategoriaID", SqlDbType.Int).Value = (object?)p.CategoriaID ?? DBNull.Value;
+        cmd.Parameters.Add("@CantidadPorUnidad", SqlDbType.NVarChar, 30).Value =
+            string.IsNullOrWhiteSpace(p.CantidadPorUnidad) ? DBNull.Value : p.CantidadPorUnidad.Trim();
+        cmd.Parameters.Add("@PrecioUnidad", SqlDbType.Decimal).Value = p.PrecioUnidad;
+        cmd.Parameters.Add("@UnidadesEnExistencia", SqlDbType.SmallInt).Value = p.UnidadesEnExistencia;
+        cmd.Parameters.Add("@UnidadesEnPedido", SqlDbType.SmallInt).Value = p.UnidadesEnPedido;
+        cmd.Parameters.Add("@NivelDeReorden", SqlDbType.SmallInt).Value = p.NivelDeReorden;
+        cmd.Parameters.Add("@Descontinuado", SqlDbType.Bit).Value = p.Descontinuado;
+    }
+
+    private static Producto Map(SqlDataReader r) => new()
+    {
+        ProductoID = r.GetInt32(r.GetOrdinal("ProductoID")),
+        NombreProducto = r.GetString(r.GetOrdinal("NombreProducto")),
+        ProveedorID = r.GetIntOrNull("ProveedorID"),
+        CategoriaID = r.GetIntOrNull("CategoriaID"),
+        Proveedor = HasColumn(r, "Proveedor") ? r.GetStringOrNull("Proveedor") : null,
+        Categoria = HasColumn(r, "Categoria") ? r.GetStringOrNull("Categoria") : null,
+        CantidadPorUnidad = r.GetStringOrNull("CantidadPorUnidad"),
+        PrecioUnidad = r.GetDecimalSafe("PrecioUnidad"),
+        UnidadesEnExistencia = r.GetInt16Safe("UnidadesEnExistencia"),
+        UnidadesEnPedido = r.GetInt16Safe("UnidadesEnPedido"),
+        NivelDeReorden = r.GetInt16Safe("NivelDeReorden"),
+        Descontinuado = !r.IsDBNull(r.GetOrdinal("Descontinuado")) && r.GetBoolean(r.GetOrdinal("Descontinuado"))
+    };
+
+    private static bool HasColumn(SqlDataReader r, string name)
+    {
+        for (int i = 0; i < r.FieldCount; i++)
+            if (string.Equals(r.GetName(i), name, StringComparison.OrdinalIgnoreCase)) return true;
+        return false;
     }
 }

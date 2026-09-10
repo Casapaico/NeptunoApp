@@ -1,9 +1,10 @@
-namespace NeptunoApp.Models
+using CommunityToolkit.Mvvm.ComponentModel;
+
+namespace NeptunoApp.Models;
+
+public partial class Categoria : ObservableObject
 {
-    public class Categoria
-    {
-        public int IdCategoria { get; set; }
-        public string NombreCategoria { get; set; }
-        public string Descripcion { get; set; }
-    }
+    [ObservableProperty] private int categoriaID;
+    [ObservableProperty] private string nombreCategoria = string.Empty;
+    [ObservableProperty] private string? descripcion;
 }

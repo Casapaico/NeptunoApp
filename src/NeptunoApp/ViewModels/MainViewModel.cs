@@ -1,33 +1,52 @@
-using System.Windows.Input;
-using NeptunoApp.Helpers;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using NeptunoApp.Data;
 
-namespace NeptunoApp.ViewModels
+namespace NeptunoApp.ViewModels;
+
+public partial class MainViewModel : ObservableObject
 {
-    /// <summary>Menu principal: navega entre las vistas de mantenimiento y reportes.</summary>
-    public class MainViewModel : ViewModelBase
+    public ProductosViewModel Productos { get; }
+    public CategoriasViewModel Categorias { get; }
+    public ProveedoresViewModel Proveedores { get; }
+    public PedidosViewModel Pedidos { get; }
+    public ReporteViewModel Reporte { get; }
+
+    [ObservableProperty]
+    private ObservableObject seccionActual;
+
+    public MainViewModel(
+        IProductoRepository productoRepo,
+        ICategoriaRepository categoriaRepo,
+        IProveedorRepository proveedorRepo,
+        IPedidoRepository pedidoRepo,
+        IReporteRepository reporteRepo,
+        ICatalogoRepository catalogoRepo)
     {
-        private ViewModelBase _currentViewModel;
-        public ViewModelBase CurrentViewModel
-        {
-            get => _currentViewModel;
-            set => SetProperty(ref _currentViewModel, value);
-        }
+        Productos = new ProductosViewModel(productoRepo, catalogoRepo);
+        Categorias = new CategoriasViewModel(categoriaRepo);
+        Proveedores = new ProveedoresViewModel(proveedorRepo);
+        Pedidos = new PedidosViewModel(pedidoRepo, catalogoRepo);
+        Reporte = new ReporteViewModel(reporteRepo);
 
-        public ICommand VerProductosCommand { get; }
-        public ICommand VerCategoriasCommand { get; }
-        public ICommand VerProveedoresCommand { get; }
-        public ICommand VerPedidosCommand { get; }
-        public ICommand VerReportesCommand { get; }
-
-        public MainViewModel()
-        {
-            VerProductosCommand   = new RelayCommand(_ => CurrentViewModel = new ProductosViewModel());
-            VerCategoriasCommand  = new RelayCommand(_ => CurrentViewModel = new CategoriasViewModel());
-            VerProveedoresCommand = new RelayCommand(_ => CurrentViewModel = new ProveedoresViewModel());
-            VerPedidosCommand     = new RelayCommand(_ => CurrentViewModel = new PedidosViewModel());
-            VerReportesCommand    = new RelayCommand(_ => CurrentViewModel = new ReportesViewModel());
-
-            CurrentViewModel = new ProductosViewModel();
-        }
+        seccionActual = Productos;
     }
+
+    [RelayCommand] private void IrAProductos() => SeccionActual = Productos;
+    [RelayCommand] private void IrACategorias() => SeccionActual = Categorias;
+    [RelayCommand] private void IrAProveedores() => SeccionActual = Proveedores;
+    [RelayCommand] private void IrAPedidos() => SeccionActual = Pedidos;
+    [RelayCommand] private void IrAReporte() => SeccionActual = Reporte;
+
+    public string SeccionActualNombre => SeccionActual switch
+    {
+        ProductosViewModel => "Productos",
+        CategoriasViewModel => "Categorias",
+        ProveedoresViewModel => "Proveedores",
+        PedidosViewModel => "Pedidos",
+        ReporteViewModel => "Reporte por fechas",
+        _ => string.Empty
+    };
+
+    partial void OnSeccionActualChanged(ObservableObject value) => OnPropertyChanged(nameof(SeccionActualNombre));
 }

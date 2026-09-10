@@ -7,83 +7,74 @@
             <ColumnDefinition Width="340"/>
         </Grid.ColumnDefinitions>
 
-        <DockPanel Grid.Column="0" Margin="0,0,12,0">
-            <TextBlock DockPanel.Dock="Top" Text="Mantenimiento de Proveedores"
-                       FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
-
-            <!-- Busqueda por nombreContacto y ciudad (usp_Proveedores_Buscar) -->
-            <Border DockPanel.Dock="Top" Background="#F3F4F6" Padding="10" Margin="0,0,0,10">
+        <DockPanel Grid.Column="0" Margin="0,0,16,0">
+            <!-- Busqueda por nombreContacto y ciudad -->
+            <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Margin="0,0,0,12">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Contacto:" VerticalAlignment="Center"/>
-                    <TextBox Width="140" Margin="6,0,14,0" Padding="4"
-                             Text="{Binding FiltroContacto, UpdateSourceTrigger=PropertyChanged}"/>
-                    <TextBlock Text="Ciudad:" VerticalAlignment="Center"/>
-                    <TextBox Width="120" Margin="6,0,14,0" Padding="4"
-                             Text="{Binding FiltroCiudad, UpdateSourceTrigger=PropertyChanged}"/>
-                    <Button Content="Buscar"   Width="80" Margin="0,0,6,0" Command="{Binding BuscarCommand}"/>
-                    <Button Content="Ver todos" Width="80" Command="{Binding VerTodosCommand}"/>
+                    <StackPanel Margin="0,0,12,0">
+                        <Label Content="Contacto"/>
+                        <TextBox Width="150" Text="{Binding FiltroContacto, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,12,0">
+                        <Label Content="Ciudad"/>
+                        <TextBox Width="130" Text="{Binding FiltroCiudad, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                    <Button Content="Buscar" Style="{StaticResource AccentButton}" VerticalAlignment="Bottom"
+                            Margin="0,0,8,0" Command="{Binding BuscarCommand}"/>
+                    <Button Content="Ver todos" Style="{StaticResource OutlineButton}" VerticalAlignment="Bottom"
+                            Command="{Binding CargarCommand}"/>
                 </StackPanel>
             </Border>
 
-            <DataGrid ItemsSource="{Binding Lista}" SelectedItem="{Binding Seleccionado}"
-                      AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False">
+            <DataGrid ItemsSource="{Binding Items}" SelectedItem="{Binding Seleccionado}">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Id"        Binding="{Binding IdProveedor}"    Width="45"/>
-                    <DataGridTextColumn Header="Compania"  Binding="{Binding NombreCompania}" Width="*"/>
-                    <DataGridTextColumn Header="Contacto"  Binding="{Binding NombreContacto}" Width="140"/>
-                    <DataGridTextColumn Header="Ciudad"    Binding="{Binding Ciudad}"         Width="100"/>
-                    <DataGridTextColumn Header="Pais"      Binding="{Binding Pais}"           Width="90"/>
-                    <DataGridTextColumn Header="Telefono"  Binding="{Binding Telefono}"       Width="110"/>
+                    <DataGridTextColumn Header="ID" Binding="{Binding ProveedorID}" Width="45"/>
+                    <DataGridTextColumn Header="Compania" Binding="{Binding CompaniaNombre}" Width="*"/>
+                    <DataGridTextColumn Header="Contacto" Binding="{Binding NombreContacto}" Width="140"/>
+                    <DataGridTextColumn Header="Ciudad" Binding="{Binding Ciudad}" Width="110"/>
+                    <DataGridTextColumn Header="Pais" Binding="{Binding Pais}" Width="90"/>
+                    <DataGridTextColumn Header="Telefono" Binding="{Binding Telefono}" Width="120"/>
                 </DataGrid.Columns>
             </DataGrid>
         </DockPanel>
 
-        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel>
-                <TextBlock Text="Datos" FontWeight="Bold" Margin="0,0,0,8"/>
+        <Border Grid.Column="1" Style="{StaticResource Card}" VerticalAlignment="Top">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="560">
+                <StackPanel>
+                    <TextBlock Text="Datos del proveedor" FontWeight="SemiBold" Margin="0,0,0,12"/>
 
-                <TextBlock Text="Id"/>
-                <TextBox Text="{Binding Id}" IsReadOnly="True" Margin="0,2,0,8" Padding="5"/>
+                    <Label Content="ID"/>
+                    <TextBox Text="{Binding ProveedorID}" IsReadOnly="True" Margin="0,0,0,8"/>
+                    <Label Content="Compania *"/>
+                    <TextBox Text="{Binding CompaniaNombre, UpdateSourceTrigger=PropertyChanged}" MaxLength="60" Margin="0,0,0,8"/>
+                    <Label Content="Nombre contacto"/>
+                    <TextBox Text="{Binding NombreContacto, UpdateSourceTrigger=PropertyChanged}" MaxLength="40" Margin="0,0,0,8"/>
+                    <Label Content="Cargo contacto"/>
+                    <TextBox Text="{Binding CargoContacto, UpdateSourceTrigger=PropertyChanged}" MaxLength="40" Margin="0,0,0,8"/>
+                    <Label Content="Direccion"/>
+                    <TextBox Text="{Binding Direccion, UpdateSourceTrigger=PropertyChanged}" MaxLength="80" Margin="0,0,0,8"/>
+                    <Label Content="Ciudad"/>
+                    <TextBox Text="{Binding Ciudad, UpdateSourceTrigger=PropertyChanged}" MaxLength="30" Margin="0,0,0,8"/>
+                    <Label Content="Codigo postal"/>
+                    <TextBox Text="{Binding CodigoPostal, UpdateSourceTrigger=PropertyChanged}" MaxLength="10" Margin="0,0,0,8"/>
+                    <Label Content="Pais"/>
+                    <TextBox Text="{Binding Pais, UpdateSourceTrigger=PropertyChanged}" MaxLength="30" Margin="0,0,0,8"/>
+                    <Label Content="Telefono"/>
+                    <TextBox Text="{Binding Telefono, UpdateSourceTrigger=PropertyChanged}" MaxLength="24" Margin="0,0,0,8"/>
+                    <Label Content="Fax"/>
+                    <TextBox Text="{Binding Fax, UpdateSourceTrigger=PropertyChanged}" MaxLength="24" Margin="0,0,0,14"/>
 
-                <TextBlock Text="Nombre compania *"/>
-                <TextBox Text="{Binding NombreCompania, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" Padding="5"/>
+                    <UniformGrid Columns="2">
+                        <Button Content="Nuevo" Style="{StaticResource OutlineButton}" Margin="0,0,4,6" Command="{Binding NuevoCommand}"/>
+                        <Button Content="Guardar" Style="{StaticResource AccentButton}" Margin="4,0,0,6" Command="{Binding GuardarCommand}"/>
+                        <Button Content="Eliminar" Style="{StaticResource OutlineButton}" Margin="0,6,0,0" Command="{Binding EliminarCommand}"/>
+                        <TextBlock/>
+                    </UniformGrid>
 
-                <TextBlock Text="Nombre contacto"/>
-                <TextBox Text="{Binding NombreContacto, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" Padding="5"/>
-
-                <TextBlock Text="Cargo contacto"/>
-                <TextBox Text="{Binding CargoContacto, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" Padding="5"/>
-
-                <TextBlock Text="Direccion"/>
-                <TextBox Text="{Binding Direccion, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" Padding="5"/>
-
-                <TextBlock Text="Ciudad"/>
-                <TextBox Text="{Binding Ciudad, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" Padding="5"/>
-
-                <TextBlock Text="Region"/>
-                <TextBox Text="{Binding Region, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" Padding="5"/>
-
-                <TextBlock Text="Codigo postal"/>
-                <TextBox Text="{Binding CodPostal, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" Padding="5"/>
-
-                <TextBlock Text="Pais"/>
-                <TextBox Text="{Binding Pais, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" Padding="5"/>
-
-                <TextBlock Text="Telefono"/>
-                <TextBox Text="{Binding Telefono, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" Padding="5"/>
-
-                <TextBlock Text="Fax"/>
-                <TextBox Text="{Binding Fax, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,12" Padding="5"/>
-
-                <UniformGrid Columns="2">
-                    <Button Content="Nuevo"    Height="34" Margin="0,0,4,4" Command="{Binding NuevoCommand}"/>
-                    <Button Content="Guardar"  Height="34" Margin="4,0,0,4" Command="{Binding GuardarCommand}"/>
-                    <Button Content="Eliminar" Height="34" Margin="0,4,0,0" Command="{Binding EliminarCommand}"/>
-                    <TextBlock/>
-                </UniformGrid>
-
-                <TextBlock Text="{Binding Mensaje}" Foreground="#B45309" TextWrapping="Wrap" Margin="0,12,0,0"/>
-            </StackPanel>
-        </ScrollViewer>
+                    <TextBlock Text="{Binding Mensaje}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" Margin="0,14,0,0"
+                               Visibility="{Binding Mensaje, Converter={StaticResource StringNullOrEmptyToVisibility}}"/>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
     </Grid>
 </UserControl>

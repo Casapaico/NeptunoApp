@@ -1,9 +1,8 @@
 using System.Windows.Controls;
 
-namespace NeptunoApp.Views
+namespace NeptunoApp.Views;
+
+public partial class ProveedoresView : UserControl
 {
-    public partial class ProveedoresView : UserControl
-    {
-        public ProveedoresView() => InitializeComponent();
-    }
+    public ProveedoresView() => InitializeComponent();
 }
