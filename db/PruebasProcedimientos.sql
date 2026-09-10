@@ -1,7 +1,7 @@
 /* ============================================================
    PruebasProcedimientos.sql
    Ejercita TODOS los procedimientos almacenados de NeptunoDB y
-   muestra el resultado. Sirve como evidencia de que funcionan.
+   muestra el resultado, para verificar que funcionan.
    Lo que inserta lo elimina al final (no deja basura).
 
    Ejecutar despues de NeptunoDB.sql y ProcedimientosAlmacenados.sql:

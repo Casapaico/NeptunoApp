@@ -1,7 +1,7 @@
 <Window x:Class="NeptunoApp.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Neptuno · ADO .NET Semana 04 (WPF + MVVM + SP)"
+        Title="Neptuno · Gestión de catálogo (WPF + MVVM + SQL Server)"
         Height="760" Width="1100" MinHeight="560" MinWidth="900"
         WindowStartupLocation="CenterScreen" Background="{StaticResource BackgroundBrush}">
 

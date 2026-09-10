@@ -24,15 +24,15 @@ try {
     exit 1
 }
 
-# 2. Probar la conexion de red con la laptop (SQL Server)
+# 2. Probar la conexion de red con el servidor SQL
 Write-Host "`nProbando conexion con SQL Server en $ipServidor`:$puerto ..." -ForegroundColor Cyan
 $test = Test-NetConnection -ComputerName $ipServidor -Port $puerto -WarningAction SilentlyContinue
 if ($test.TcpTestSucceeded) {
     Write-Host 'Conexion de red OK.' -ForegroundColor Green
 } else {
-    Write-Host 'AVISO: no se pudo conectar al puerto 1433 de la laptop.' -ForegroundColor Yellow
-    Write-Host ' - Ambas PC deben estar en la WiFi "iPhone de Alumno" (ipconfig -> 172.20.10.x).'
-    Write-Host " - Verifica la IP de la laptop (hostname -I) y ajustala en src\NeptunoApp\Data\DbConfig.cs."
+    Write-Host 'AVISO: no se pudo conectar al puerto 1433 del servidor.' -ForegroundColor Yellow
+    Write-Host ' - Ambos equipos deben estar en la misma red local.'
+    Write-Host ' - Verifica la IP del servidor SQL y ajustala en src\NeptunoApp\Data\DbConfig.cs.'
     Write-Host ' - Continuo de todos modos...'
 }
 

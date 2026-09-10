@@ -1,9 +1,8 @@
 /* ============================================================
    NeptunoDB - Procedimientos Almacenados
-   ADO .NET - Semana 04  (Desarrollo de Aplicaciones Empresariales Avanzado)
 
    Requiere que NeptunoDB.sql ya se haya ejecutado.
-   Estilo alineado con la plantilla WPFMMVMSP:
+   Convencion:
      SET NOCOUNT ON;  BEGIN TRY / BEGIN CATCH THROW;
      Crear -> SELECT SCOPE_IDENTITY() AS Id
 
