@@ -1,0 +1,25 @@
+<Application x:Class="NeptunoApp.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:NeptunoApp.ViewModels"
+             xmlns:views="clr-namespace:NeptunoApp.Views"
+             StartupUri="Views/MainWindow.xaml">
+    <Application.Resources>
+        <!-- Mapeo ViewModel -> View para la navegacion del menu principal -->
+        <DataTemplate DataType="{x:Type vm:CategoriasViewModel}">
+            <views:CategoriasView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ProveedoresViewModel}">
+            <views:ProveedoresView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ProductosViewModel}">
+            <views:ProductosView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:PedidosViewModel}">
+            <views:PedidosView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ReportesViewModel}">
+            <views:ReportesView/>
+        </DataTemplate>
+    </Application.Resources>
+</Application>
