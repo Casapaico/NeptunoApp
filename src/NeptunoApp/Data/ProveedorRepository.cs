@@ -18,10 +18,12 @@ public class ProveedorRepository : IProveedorRepository
             CommandType = CommandType.StoredProcedure
         };
         AgregarParametros(cmd, p, incluirId: false);
+        var idParam = cmd.Parameters.Add("@ProveedorID", SqlDbType.Int);
+        idParam.Direction = ParameterDirection.Output;
 
         await cn.OpenAsync();
-        var result = await cmd.ExecuteScalarAsync();
-        return Convert.ToInt32(result);
+        await cmd.ExecuteNonQueryAsync();
+        return (int)idParam.Value;
     }
 
     public async Task<Proveedor?> ObtenerPorIdAsync(int proveedorId)

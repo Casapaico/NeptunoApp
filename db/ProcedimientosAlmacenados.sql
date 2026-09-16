@@ -1,12 +1,17 @@
 /* ============================================================
    NeptunoDB - Procedimientos Almacenados
 
-   Requiere que NeptunoDB.sql ya se haya ejecutado.
+   Requiere que NeptunoDB.sql y Migracion_ActivoLogico.sql ya se
+   hayan ejecutado (esta version depende de la columna Activo).
    Convencion:
      SET NOCOUNT ON;  BEGIN TRY / BEGIN CATCH THROW;
-     Crear -> SELECT SCOPE_IDENTITY() AS Id
+     Crear -> parametro @<Entidad>ID OUTPUT con SCOPE_IDENTITY()
+              (permite invocar el alta con ExecuteNonQuery, Semana 05)
+     Eliminar -> eliminacion logica (UPDATE Activo = 0), nunca DELETE fisico
+     Listar/Buscar -> filtra WHERE Activo = 1
 
    Ejecutar:
+     sqlcmd -S localhost -U sa -P 'TU_PASSWORD' -C -i db/Migracion_ActivoLogico.sql
      sqlcmd -S localhost -U sa -P 'TU_PASSWORD' -C -i db/ProcedimientosAlmacenados.sql
    ============================================================ */
 
@@ -19,7 +24,8 @@ GO
 
 CREATE OR ALTER PROCEDURE dbo.usp_Categoria_Crear
     @NombreCategoria NVARCHAR(30),
-    @Descripcion     NVARCHAR(200) = NULL
+    @Descripcion     NVARCHAR(200) = NULL,
+    @CategoriaID     INT = NULL OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -27,7 +33,7 @@ BEGIN
         INSERT INTO dbo.Categorias (NombreCategoria, Descripcion)
         VALUES (@NombreCategoria, @Descripcion);
 
-        SELECT SCOPE_IDENTITY() AS CategoriaID;
+        SET @CategoriaID = CAST(SCOPE_IDENTITY() AS INT);
     END TRY
     BEGIN CATCH
         THROW;
@@ -52,6 +58,7 @@ BEGIN
     SET NOCOUNT ON;
     SELECT CategoriaID, NombreCategoria, Descripcion
     FROM dbo.Categorias
+    WHERE Activo = 1
     ORDER BY NombreCategoria;
 END
 GO
@@ -77,16 +84,14 @@ BEGIN
 END
 GO
 
+-- Eliminacion logica: nunca DELETE fisico, solo Activo = 0.
 CREATE OR ALTER PROCEDURE dbo.usp_Categoria_Eliminar
     @CategoriaID INT
 AS
 BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
-        IF EXISTS (SELECT 1 FROM dbo.Productos WHERE CategoriaID = @CategoriaID)
-            THROW 51002, 'No se puede eliminar: la categoria tiene productos asociados.', 1;
-
-        DELETE FROM dbo.Categorias WHERE CategoriaID = @CategoriaID;
+        UPDATE dbo.Categorias SET Activo = 0 WHERE CategoriaID = @CategoriaID;
 
         IF @@ROWCOUNT = 0 THROW 51003, 'Categoria no encontrada.', 1;
     END TRY
@@ -109,7 +114,8 @@ CREATE OR ALTER PROCEDURE dbo.usp_Proveedor_Crear
     @CodigoPostal   NVARCHAR(10) = NULL,
     @Pais           NVARCHAR(30) = NULL,
     @Telefono       NVARCHAR(24) = NULL,
-    @Fax            NVARCHAR(24) = NULL
+    @Fax            NVARCHAR(24) = NULL,
+    @ProveedorID    INT = NULL OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -121,7 +127,7 @@ BEGIN
             (@CompaniaNombre, @NombreContacto, @CargoContacto, @Direccion, @Ciudad,
              @CodigoPostal, @Pais, @Telefono, @Fax);
 
-        SELECT SCOPE_IDENTITY() AS ProveedorID;
+        SET @ProveedorID = CAST(SCOPE_IDENTITY() AS INT);
     END TRY
     BEGIN CATCH
         THROW;
@@ -148,6 +154,7 @@ BEGIN
     SELECT ProveedorID, CompaniaNombre, NombreContacto, CargoContacto, Direccion,
            Ciudad, CodigoPostal, Pais, Telefono, Fax
     FROM dbo.Proveedores
+    WHERE Activo = 1
     ORDER BY CompaniaNombre;
 END
 GO
@@ -187,16 +194,14 @@ BEGIN
 END
 GO
 
+-- Eliminacion logica: nunca DELETE fisico, solo Activo = 0.
 CREATE OR ALTER PROCEDURE dbo.usp_Proveedor_Eliminar
     @ProveedorID INT
 AS
 BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
-        IF EXISTS (SELECT 1 FROM dbo.Productos WHERE ProveedorID = @ProveedorID)
-            THROW 52002, 'No se puede eliminar: el proveedor tiene productos asociados.', 1;
-
-        DELETE FROM dbo.Proveedores WHERE ProveedorID = @ProveedorID;
+        UPDATE dbo.Proveedores SET Activo = 0 WHERE ProveedorID = @ProveedorID;
 
         IF @@ROWCOUNT = 0 THROW 52003, 'Proveedor no encontrado.', 1;
     END TRY
@@ -206,7 +211,8 @@ BEGIN
 END
 GO
 
--- Listado de proveedores buscando por nombreContacto y ciudad (filtros opcionales)
+-- Listado de proveedores buscando por nombreContacto y ciudad (filtros opcionales).
+-- Solo muestra proveedores activos (Activo = 1).
 CREATE OR ALTER PROCEDURE dbo.usp_Proveedor_BuscarPorContactoCiudad
     @NombreContacto NVARCHAR(40) = NULL,
     @Ciudad         NVARCHAR(30) = NULL
@@ -216,7 +222,8 @@ BEGIN
     SELECT ProveedorID, CompaniaNombre, NombreContacto, CargoContacto, Direccion,
            Ciudad, CodigoPostal, Pais, Telefono, Fax
     FROM dbo.Proveedores
-    WHERE (@NombreContacto IS NULL OR @NombreContacto = ''
+    WHERE Activo = 1
+      AND (@NombreContacto IS NULL OR @NombreContacto = ''
            OR NombreContacto LIKE '%' + @NombreContacto + '%')
       AND (@Ciudad IS NULL OR @Ciudad = ''
            OR Ciudad LIKE '%' + @Ciudad + '%')
@@ -237,7 +244,8 @@ CREATE OR ALTER PROCEDURE dbo.usp_Producto_Crear
     @UnidadesEnExistencia SMALLINT = 0,
     @UnidadesEnPedido     SMALLINT = 0,
     @NivelDeReorden       SMALLINT = 0,
-    @Descontinuado        BIT = 0
+    @Descontinuado        BIT = 0,
+    @ProductoID           INT = NULL OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -249,7 +257,7 @@ BEGIN
             (@NombreProducto, @ProveedorID, @CategoriaID, @CantidadPorUnidad, @PrecioUnidad,
              @UnidadesEnExistencia, @UnidadesEnPedido, @NivelDeReorden, @Descontinuado);
 
-        SELECT SCOPE_IDENTITY() AS ProductoID;
+        SET @ProductoID = CAST(SCOPE_IDENTITY() AS INT);
     END TRY
     BEGIN CATCH
         THROW;
@@ -281,6 +289,7 @@ BEGIN
     FROM dbo.Productos p
     LEFT JOIN dbo.Proveedores pr ON pr.ProveedorID = p.ProveedorID
     LEFT JOIN dbo.Categorias  c  ON c.CategoriaID  = p.CategoriaID
+    WHERE p.Activo = 1
     ORDER BY p.NombreProducto;
 END
 GO
@@ -320,16 +329,14 @@ BEGIN
 END
 GO
 
+-- Eliminacion logica: nunca DELETE fisico, solo Activo = 0.
 CREATE OR ALTER PROCEDURE dbo.usp_Producto_Eliminar
     @ProductoID INT
 AS
 BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
-        IF EXISTS (SELECT 1 FROM dbo.DetallePedidos WHERE ProductoID = @ProductoID)
-            THROW 53002, 'No se puede eliminar: el producto aparece en pedidos.', 1;
-
-        DELETE FROM dbo.Productos WHERE ProductoID = @ProductoID;
+        UPDATE dbo.Productos SET Activo = 0 WHERE ProductoID = @ProductoID;
 
         IF @@ROWCOUNT = 0 THROW 53003, 'Producto no encontrado.', 1;
     END TRY
@@ -352,7 +359,8 @@ CREATE OR ALTER PROCEDURE dbo.usp_Pedido_Crear
     @TransportistaID INT = NULL,
     @Destinatario    NVARCHAR(60) = NULL,
     @CiudadDestino   NVARCHAR(30) = NULL,
-    @PaisDestino     NVARCHAR(30) = NULL
+    @PaisDestino     NVARCHAR(30) = NULL,
+    @PedidoID        INT = NULL OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -364,7 +372,7 @@ BEGIN
             (@ClienteID, @EmpleadoID, @FechaPedido, @FechaRequerida, @FechaEnvio,
              @TransportistaID, @Destinatario, @CiudadDestino, @PaisDestino);
 
-        SELECT SCOPE_IDENTITY() AS PedidoID;
+        SET @PedidoID = CAST(SCOPE_IDENTITY() AS INT);
     END TRY
     BEGIN CATCH
         THROW;
@@ -409,6 +417,7 @@ BEGIN
     FROM dbo.Pedidos p
     LEFT JOIN dbo.Clientes  cl ON cl.ClienteID  = p.ClienteID
     LEFT JOIN dbo.Empleados e  ON e.EmpleadoID  = p.EmpleadoID
+    WHERE p.Activo = 1
     ORDER BY p.FechaPedido DESC, p.PedidoID DESC;
 END
 GO
@@ -448,14 +457,14 @@ BEGIN
 END
 GO
 
+-- Eliminacion logica: nunca DELETE fisico, solo Activo = 0 (el detalle se conserva).
 CREATE OR ALTER PROCEDURE dbo.usp_Pedido_Eliminar
     @PedidoID INT
 AS
 BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
-        DELETE FROM dbo.DetallePedidos WHERE PedidoID = @PedidoID;
-        DELETE FROM dbo.Pedidos        WHERE PedidoID = @PedidoID;
+        UPDATE dbo.Pedidos SET Activo = 0 WHERE PedidoID = @PedidoID;
 
         IF @@ROWCOUNT = 0 THROW 54002, 'Pedido no encontrado.', 1;
     END TRY
@@ -488,7 +497,8 @@ BEGIN
     INNER JOIN dbo.Pedidos    ped ON ped.PedidoID   = d.PedidoID
     INNER JOIN dbo.Productos  pr  ON pr.ProductoID  = d.ProductoID
     LEFT  JOIN dbo.Clientes   cl  ON cl.ClienteID   = ped.ClienteID
-    WHERE ped.FechaPedido BETWEEN @FechaInicio AND @FechaFin
+    WHERE ped.Activo = 1
+      AND ped.FechaPedido BETWEEN @FechaInicio AND @FechaFin
     ORDER BY ped.FechaPedido, ped.PedidoID, pr.NombreProducto;
 END
 GO

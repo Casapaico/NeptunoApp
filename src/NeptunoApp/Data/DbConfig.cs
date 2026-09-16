@@ -16,5 +16,5 @@ namespace NeptunoApp.Data;
 public static class DbConfig
 {
     public const string ConnectionString =
-        @"Server=172.20.10.4,1433;Database=NeptunoDB;User Id=sa;Password=Meolvide2.0;TrustServerCertificate=True;Encrypt=True;Connect Timeout=15;";
+        @"Server=10.200.171.203,1433;Database=NeptunoDB;User Id=sa;Password=Meolvide2.0;TrustServerCertificate=True;Encrypt=True;Connect Timeout=15;";
 }

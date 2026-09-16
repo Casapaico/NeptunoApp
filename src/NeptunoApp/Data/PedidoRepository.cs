@@ -18,10 +18,12 @@ public class PedidoRepository : IPedidoRepository
             CommandType = CommandType.StoredProcedure
         };
         AgregarParametros(cmd, p, incluirId: false);
+        var idParam = cmd.Parameters.Add("@PedidoID", SqlDbType.Int);
+        idParam.Direction = ParameterDirection.Output;
 
         await cn.OpenAsync();
-        var result = await cmd.ExecuteScalarAsync();
-        return Convert.ToInt32(result);
+        await cmd.ExecuteNonQueryAsync();
+        return (int)idParam.Value;
     }
 
     public async Task<Pedido?> ObtenerPorIdAsync(int pedidoId)

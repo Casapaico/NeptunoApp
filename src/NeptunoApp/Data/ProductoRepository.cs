@@ -18,10 +18,12 @@ public class ProductoRepository : IProductoRepository
             CommandType = CommandType.StoredProcedure
         };
         AgregarParametros(cmd, p, incluirId: false);
+        var idParam = cmd.Parameters.Add("@ProductoID", SqlDbType.Int);
+        idParam.Direction = ParameterDirection.Output;
 
         await cn.OpenAsync();
-        var result = await cmd.ExecuteScalarAsync();
-        return Convert.ToInt32(result);
+        await cmd.ExecuteNonQueryAsync();
+        return (int)idParam.Value;
     }
 
     public async Task<Producto?> ObtenerPorIdAsync(int productoId)

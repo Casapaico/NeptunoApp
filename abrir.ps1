@@ -10,7 +10,7 @@
 $ErrorActionPreference = 'Stop'
 $raiz = $PSScriptRoot
 $csproj = Join-Path $raiz 'src\NeptunoApp\NeptunoApp.csproj'
-$ipServidor = '172.20.10.4'
+$ipServidor = '10.200.171.203'
 $puerto = 1433
 
 Write-Host '== NeptunoApp ==' -ForegroundColor Cyan

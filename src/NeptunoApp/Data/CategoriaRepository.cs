@@ -19,10 +19,12 @@ public class CategoriaRepository : ICategoriaRepository
         };
         cmd.Parameters.Add("@NombreCategoria", SqlDbType.NVarChar, 30).Value = c.NombreCategoria;
         cmd.Parameters.Add("@Descripcion", SqlDbType.NVarChar, 200).Value = (object?)c.Descripcion ?? DBNull.Value;
+        var idParam = cmd.Parameters.Add("@CategoriaID", SqlDbType.Int);
+        idParam.Direction = ParameterDirection.Output;
 
         await cn.OpenAsync();
-        var result = await cmd.ExecuteScalarAsync();
-        return Convert.ToInt32(result);
+        await cmd.ExecuteNonQueryAsync();
+        return (int)idParam.Value;
     }
 
     public async Task<Categoria?> ObtenerPorIdAsync(int categoriaId)
