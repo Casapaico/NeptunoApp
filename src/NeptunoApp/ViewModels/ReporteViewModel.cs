@@ -1,20 +1,21 @@
-using System.Collections.ObjectModel;
+using System.Data;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NeptunoApp.Data;
-using NeptunoApp.Models;
 
 namespace NeptunoApp.ViewModels;
 
 /// <summary>
 /// Reporte: detalles de pedidos (INNER JOIN con Pedidos) filtrando por un
-/// intervalo de fechas (usp_DetallePedido_ListarPorRangoFechas).
+/// intervalo de fechas (usp_DetallePedido_ListarPorRangoFechas). Se muestra
+/// en modo desconectado: el repositorio llena un DataTable y aqui solo se
+/// navega/lee, sin conexion abierta con el servidor.
 /// </summary>
 public partial class ReporteViewModel : ObservableObject
 {
     private readonly IReporteRepository _repo;
 
-    public ObservableCollection<LineaReporte> Lineas { get; } = new();
+    [ObservableProperty] private DataTable lineas = new();
 
     [ObservableProperty] private DateTime fechaInicio = new(DateTime.Today.Year, 1, 1);
     [ObservableProperty] private DateTime fechaFin = DateTime.Today;
@@ -39,11 +40,13 @@ public partial class ReporteViewModel : ObservableObject
 
         try
         {
-            var datos = await _repo.DetallePedidosPorRangoFechasAsync(FechaInicio, FechaFin);
-            Lineas.Clear();
-            foreach (var l in datos) Lineas.Add(l);
-            TotalGeneral = datos.Sum(l => l.Subtotal);
-            Mensaje = $"{Lineas.Count} lineas de detalle · Total: {TotalGeneral:C2}";
+            Lineas = await _repo.DetallePedidosPorRangoFechasAsync(FechaInicio, FechaFin);
+
+            decimal total = 0;
+            foreach (DataRow fila in Lineas.Rows)
+                total += (decimal)fila["Subtotal"];
+            TotalGeneral = total;
+            Mensaje = $"{Lineas.Rows.Count} lineas de detalle · Total: {TotalGeneral:C2}";
         }
         catch (Exception ex) { Mensaje = $"Error al generar el reporte: {ex.Message}"; }
     }

@@ -95,18 +95,20 @@ En Windows también está el script [`abrir.ps1`](abrir.ps1) (comprueba la red y
 ### Estructura
 
 ```
-src/NeptunoApp/
-├── Data/
-│   ├── DbConfig.cs                → cadena de conexión al servidor SQL
-│   ├── I{Categoria,Proveedor,Producto,Pedido,Reporte,Catalogo}Repository.cs
-│   ├── {…}Repository.cs           → ADO.NET asíncrono + CommandType.StoredProcedure
-│   └── ReaderExtensions.cs        → helpers para columnas NULL
-├── Models/                        → Categoria, Proveedor, Producto, Pedido, DetallePedido, OpcionCombo, LineaReporte
+src/NeptunoApp/                     (proyecto de inicio, WinExe)
+├── App.config                     → cadena de conexión (ConfigurationManager)
 ├── ViewModels/                    → MainViewModel + una VM por sección (CommunityToolkit.Mvvm)
 ├── Views/                         → un UserControl por sección
 ├── Converters/  Themes/Theme.xaml → estilos y convertidores de la interfaz
 ├── MainWindow.xaml               → barra lateral de navegación + ContentControl
 └── App.xaml                      → merge del tema + DataTemplates ViewModel→View
+
+src/NeptunoApp.Datos/                (Class Library, referenciada por NeptunoApp)
+├── Data/
+│   ├── I{Categoria,Proveedor,Producto,Pedido,Reporte,Catalogo}Repository.cs
+│   ├── {…}Repository.cs           → ADO.NET asíncrono + CommandType.StoredProcedure
+│   └── ReaderExtensions.cs        → helpers para columnas NULL
+└── Models/                        → Categoria, Proveedor, Producto, Pedido, DetallePedido, OpcionCombo
 ```
 
 ### Pantallas
@@ -125,10 +127,103 @@ src/NeptunoApp/
 
 1. Servidor SQL activo y accesible en la red local; ejecutar los scripts de `db/`
    en orden: `NeptunoDB.sql` → `Migracion_ActivoLogico.sql` → `ProcedimientosAlmacenados.sql`.
-2. Ajustar `Server=` en `src/NeptunoApp/Data/DbConfig.cs` con la IP del servidor.
+2. Ajustar `Server=` en `src/NeptunoApp/App.config` (sección `connectionStrings`,
+   entrada `NeptunoDB`) con la IP del servidor.
 3. Desde el equipo Windows: comprobar la conectividad al puerto `1433`
    (`Test-NetConnection <IP> -Port 1433`).
-4. Abrir `src/NeptunoApp.slnx` en Visual Studio 2022 y pulsar **F5** (o `dotnet run`).
+4. Abrir `src/NeptunoApp.slnx` en Visual Studio 2022 y pulsar **F5** (o
+   `dotnet run --project NeptunoApp/NeptunoApp.csproj`); el proyecto de inicio
+   restaura la referencia a `NeptunoApp.Datos` automáticamente.
+
+---
+
+## 5. Explicación (ADO .NET Semana 05 / Class Library y DataSet Semana 06)
+
+**`ExecuteNonQuery` en cada operación de escritura:**
+Los cuatro repositorios (`CategoriaRepository`, `ProveedorRepository`,
+`ProductoRepository`, `PedidoRepository`) usan `SqlCommand` con
+`CommandType.StoredProcedure` para las tres operaciones de escritura:
+
+- **Alta:** el procedimiento `usp_<Entidad>_Crear` recibe un parámetro de salida
+  `@<Entidad>ID INT = NULL OUTPUT` y hace `SET @<Entidad>ID = SCOPE_IDENTITY()`
+  en vez de `SELECT`. El repositorio agrega ese parámetro con
+  `Direction = ParameterDirection.Output`, llama a `ExecuteNonQueryAsync()` y
+  lee el Id generado desde `idParam.Value` (ver p. ej.
+  `CategoriaRepository.CrearAsync`).
+- **Edición:** `usp_<Entidad>_Actualizar` se invoca con `ExecuteNonQueryAsync()`;
+  no hay result set que leer.
+- **Baja:** `usp_<Entidad>_Eliminar` se invoca con `ExecuteNonQueryAsync()`.
+
+**Cómo se resolvió la eliminación lógica:**
+Se agregó la columna `Activo BIT NOT NULL DEFAULT 1` a `Categorias`,
+`Proveedores`, `Productos` y `Pedidos` (`db/Migracion_ActivoLogico.sql`). Cada
+procedimiento `_Eliminar` ya no ejecuta `DELETE`, sino
+`UPDATE dbo.<Tabla> SET Activo = 0 WHERE <Tabla>ID = @Id` — el registro persiste
+en la base de datos, solo cambia su estado. En el botón "Eliminar" de cada
+vista WPF no cambió nada en el ViewModel: sigue llamando a
+`{Entidad}Repository.EliminarAsync(id)`, y es el procedimiento almacenado el
+que decide que la baja es lógica.
+
+Esa baja se verifica en los listados y consultas agregando `WHERE Activo = 1`
+(o `AND Activo = 1`) en:
+- `usp_Categoria_ListarTodas`, `usp_Proveedor_ListarTodas`, `usp_Producto_ListarTodas`, `usp_Pedido_ListarTodas`.
+- `usp_Proveedor_BuscarPorContactoCiudad` (búsqueda por contacto/ciudad).
+- `usp_DetallePedido_ListarPorRangoFechas`, filtrando `ped.Activo = 1` sobre la
+  tabla `Pedidos` con la que hace `INNER JOIN`, de modo que un pedido dado de
+  baja lógicamente desaparece del reporte por rango de fechas aunque su detalle
+  siga existiendo en `DetallePedidos`.
+
+`db/PruebasProcedimientos.sql` ejercita este comportamiento: crea un registro,
+lo elimina, comprueba con un `SELECT` directo que `Activo = 0` y la fila sigue
+existiendo, y confirma que ya no aparece en el listado/búsqueda/reporte
+correspondiente.
+
+**Separación en Class Library (`NeptunoApp.Datos`):**
+Los Modelos y todo el acceso a datos (`Data/`, `Models/`) viven en un proyecto
+de biblioteca de clases aparte (`src/NeptunoApp.Datos`, `TargetFramework=net10.0`,
+sin dependencia de WPF), y el proyecto WPF (`src/NeptunoApp`) lo referencia con
+`<ProjectReference>`. Los namespaces (`NeptunoApp.Data`, `NeptunoApp.Models`) no
+cambiaron: solo se movió su ubicación física/ensamblado, así que ViewModels y
+Views siguen consumiéndolos igual. `MainWindow.xaml.cs` sigue siendo el único
+lugar donde se instancian los repositorios concretos e inyectan en el
+`MainViewModel` (constructor injection manual, sin contenedor de DI).
+
+**Criterio para el modo desconectado:**
+Las operaciones CRUD (alta, edición, baja) siguen siendo **conectadas**
+(`SqlConnection` + `ExecuteNonQueryAsync`), porque cada cambio del usuario debe
+confirmarse contra la base de datos de inmediato — no tiene sentido cachear una
+edición o un alta localmente. En cambio, el **reporte de detalle de pedidos por
+rango de fechas** (`ReporteRepository.DetallePedidosPorRangoFechasAsync`) es de
+**solo lectura**: el usuario elige un rango de fechas, se trae todo el resultado
+una sola vez y luego solo lo mira/ordena en pantalla, sin ninguna escritura de
+vuelta a la BD. Por eso ese reporte usa `SqlDataAdapter.Fill(DataTable)` en vez
+de `SqlDataReader`: el `DataAdapter` abre la conexión, llena el `DataTable` y la
+cierra por su cuenta, y desde ahí la UI navega el `DataTable` completamente
+desconectada del servidor (el `DataGrid` de `ReporteView.xaml` bindea
+`ItemsSource` directo al `DataTable`, usando el indexador de `DataRowView`
+—`{Binding [Columna]}`— para cada columna). Como `SqlDataAdapter.Fill` no tiene
+una sobrecarga async, se ejecuta dentro de `Task.Run(...)` para no bloquear el
+hilo de UI y mantener el async/await de punta a punta en toda la aplicación.
+
+**El "gotcha" de `App.config`:**
+Al mover el acceso a datos a la Class Library, la cadena de conexión no puede
+vivir ahí: `ConfigurationManager` solo lee el `App.config` del **ensamblado de
+inicio** (el `.exe`/`.dll` que realmente arranca), nunca el de una biblioteca
+referenciada. Por eso la cadena de conexión está en
+`src/NeptunoApp/App.config` (`<connectionStrings><add name="NeptunoDB" .../>`),
+el proyecto WPF referencia el paquete `System.Configuration.ConfigurationManager`,
+y `MainWindow.xaml.cs` la lee con
+`ConfigurationManager.ConnectionStrings["NeptunoDB"].ConnectionString` antes de
+construir los repositorios. `NeptunoApp.Datos` no sabe de dónde viene la cadena:
+cada repositorio solo recibe un `string connectionString` por constructor.
+
+**Bloqueos `.Result`/`.Wait()`:**
+Se auditó todo el proyecto (`grep -rn "\.Result\b\|\.Wait("`) y no se encontró
+ninguna llamada bloqueante sobre código async: todos los métodos de ViewModels
+y repositorios ya son `async`/`await` de punta a punta (incluidos los comandos
+de `CommunityToolkit.Mvvm`, que generan `async void`/`async Task` correctamente
+para los eventos de los botones). No fue necesaria ninguna corrección en este
+punto.
 
 ---
 

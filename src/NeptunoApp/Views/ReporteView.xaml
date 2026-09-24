@@ -27,16 +27,19 @@
             </StackPanel>
         </Border>
 
-        <DataGrid Grid.Row="2" ItemsSource="{Binding Lineas}">
+        <!-- ItemsSource bindea directo al DataTable desconectado (WPF resuelve
+             IListSource -> DefaultView); las columnas usan el indexador de
+             DataRowView, no propiedades. -->
+        <DataGrid Grid.Row="2" ItemsSource="{Binding Lineas}" AutoGenerateColumns="False">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Pedido" Binding="{Binding PedidoID}" Width="70"/>
-                <DataGridTextColumn Header="Fecha" Binding="{Binding FechaPedido, StringFormat=d}" Width="110"/>
-                <DataGridTextColumn Header="Cliente" Binding="{Binding Cliente}" Width="*"/>
-                <DataGridTextColumn Header="Producto" Binding="{Binding Producto}" Width="*"/>
-                <DataGridTextColumn Header="P. Unit" Binding="{Binding PrecioUnidad, StringFormat=C2}" Width="90"/>
-                <DataGridTextColumn Header="Cant." Binding="{Binding Cantidad}" Width="60"/>
-                <DataGridTextColumn Header="Dscto" Binding="{Binding Descuento, StringFormat=P0}" Width="65"/>
-                <DataGridTextColumn Header="Subtotal" Binding="{Binding Subtotal, StringFormat=C2}" Width="100"/>
+                <DataGridTextColumn Header="Pedido" Binding="{Binding [PedidoID]}" Width="70"/>
+                <DataGridTextColumn Header="Fecha" Binding="{Binding [FechaPedido], StringFormat=d}" Width="110"/>
+                <DataGridTextColumn Header="Cliente" Binding="{Binding [Cliente]}" Width="*"/>
+                <DataGridTextColumn Header="Producto" Binding="{Binding [Producto]}" Width="*"/>
+                <DataGridTextColumn Header="P. Unit" Binding="{Binding [PrecioUnidad], StringFormat=C2}" Width="90"/>
+                <DataGridTextColumn Header="Cant." Binding="{Binding [Cantidad]}" Width="60"/>
+                <DataGridTextColumn Header="Dscto" Binding="{Binding [Descuento], StringFormat=P0}" Width="65"/>
+                <DataGridTextColumn Header="Subtotal" Binding="{Binding [Subtotal], StringFormat=C2}" Width="100"/>
             </DataGrid.Columns>
         </DataGrid>
 

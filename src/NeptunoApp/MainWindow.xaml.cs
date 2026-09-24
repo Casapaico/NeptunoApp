@@ -1,3 +1,4 @@
+using System.Configuration;
 using System.Windows;
 using NeptunoApp.Data;
 using NeptunoApp.ViewModels;
@@ -10,7 +11,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        var cs = DbConfig.ConnectionString;
+        var cs = ConfigurationManager.ConnectionStrings["NeptunoDB"].ConnectionString;
 
         var vm = new MainViewModel(
             new ProductoRepository(cs),
